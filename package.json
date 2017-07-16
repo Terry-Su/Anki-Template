@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "devVocabulary": "sudo gulp --gulpfile /Users/suxing/Documents/WorkingDocuments/library/Anki-Template/scripts/gulp-vocabulary.js"
   },
   "repository": {
     "type": "git",
@@ -16,5 +16,12 @@
   "bugs": {
     "url": "https://github.com/Terry-Su/Anki-Template/issues"
   },
-  "homepage": "https://github.com/Terry-Su/Anki-Template#readme"
+  "homepage": "https://github.com/Terry-Su/Anki-Template#readme",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-append": "^0.3.4",
+    "gulp-append-prepend": "^1.0.3",
+    "gulp-concat": "^2.6.1",
+    "gulp-rename": "^1.2.2"
+  }
 }

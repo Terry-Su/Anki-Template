@@ -1,17 +1,81 @@
+<div id="ts_buttonBox">
+</div>
+
+<h1 class="ts_system">
+  <center>
+    <span id="ts_word">{{Question}}</span>
+  </center>
+</h1>
+<div id="ts_answer_content" class="ts_system">
+  {{Answer}}
+</div>
+
+<div id="ts_iframeBox">
+
+</div>
+<style>
+html,body{
+  width: 100%;
+  height: 100%;
+}
+
+#ts_iframe{
+  width: 100%;
+	height: 100%;
+	min-height: 768px;
+  display:none;
+}
+
+#ts_word{
+  display: none;
+}
+
+#ts_answer_content{
+	text-align: left;
+}
+
+.ts_switch_btn{
+
+	display: inline-block;
+	
+	font-size:13px;
+	font-family: "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+
+
+	color: #FFF;
+
+	/*background: linear-gradient(#42abf8, #0888e6);*/
+	background: -webkit-gradient(linear, 0 0, 0 100%, from(#42abf8), to(#0888e6)); /** Chrome Safari **/
+	background: -moz-linear-gradient(top, #42abf8, #0888e6); /** FireFox **/
+
+	border-style: solid;
+	border-width: 1px;
+	border-color: #0888e6;
+	border-radius: 5px;
+
+	box-shadow: inset 0px 1px 0px rgba(255, 255, 255, 0.3), 0 1px 2px rgba(0, 0, 0, 0.15);
+	margin: 8px;
+	padding: 5px 10px;
+	}
+	.btn:active{
+	background: #0888e6	
+	}
+</style>
+<script>
 try {
   (function () {
     var config = {
       buttons: [
         ['Thesaurus', 'http://www.freethesaurus.com/'],
         ['Image', 'http://global.bing.com/images/search?q='],
-        ['Juku', 'http://www.jukuu.com/search.php?q='],
         ['Youdao', 'http://www.youdao.com/w/eng/']
       ]
     }
     var btnBox = document.getElementById('ts_buttonBox')
-    var iframe = document.getElementById('ts_iframe')
-    var word = document.getElementById('ts_word').innerHTML
+    var iframeBox = document.getElementById('ts_iframeBox')
+    var word = document.getElementById('ts_word') && document.getElementById('ts_word').innerHTML
     var self
+    var iframe
     // set example
     // word = 'test'
 
@@ -27,6 +91,7 @@ try {
         self.bindButtonsEvents(
           self.createButtons(config.buttons)
         )
+        self.resolveDict()
       },
 
       /**
@@ -61,7 +126,7 @@ try {
        * @param {Array} buttons
        */
       bindButtonsEvents: function (buttons) {
-        buttons.map(button => {
+        buttons.map(function (button) {
           button.addEventListener("click", function () {
             self.switchToTargetUrl(button)
           })
@@ -99,7 +164,7 @@ try {
         self.hideElements(
           document.getElementsByClassName('ts_system')
         )
-        self.showElement(iframe)
+        iframe && self.showElement(iframe)
         self.updateIframe(
           button.getAttribute('searchurl')
         )
@@ -109,10 +174,31 @@ try {
        * go back to index
        */
       goBackToIndex: function () {
-        self.hideElement(iframe)
-        self.self.showElements(
+        iframe && self.hideElement(iframe)
+        self.showElements(
           document.getElementsByClassName('ts_system')
         )
+      },
+
+      /**
+       * forbid dict's default clicking event 
+       */
+      resolveDict: function () {
+        // overwrite the text click event of tsmdict
+        if (window.mdx_click) {
+          window.mdx_click = function () { }
+        }
+        // remove href of "a" tag 
+        Array.prototype.map.call(
+          document.getElementsByTagName('a'),
+          function (a) {
+            a.removeAttribute('href')
+          }
+        )
+        // remove timer
+        if (window.TouchTimerID) {
+          clearTimeout(window.TouchTimerID)
+        }
       },
 
       /**
@@ -120,8 +206,17 @@ try {
        * @param {String} src
        */
       updateIframe: function (src) {
+        // create iframe(for ios's compatibility)
+        if (!document.getElementById('ts_iframe')) {
+          iframe = document.createElement('iframe')
+          iframe.id = 'ts_iframe'
+          iframe.setAttribute('frameborder', 0)
+          iframeBox.appendChild(iframe)
+        }
+        iframe.src = ''
         iframe.src = src + word
       },
+
 
 
       // ====== Tools =======
@@ -166,6 +261,7 @@ try {
         // Production steps of ECMA-262, Edition 5, 15.4.4.19
         // Reference: http://es5.github.io/#x15.4.4.19
         if (!Array.prototype.map) {
+
           Array.prototype.map = function (callback/*, thisArg*/) {
 
             var T, A, k;
@@ -173,33 +269,94 @@ try {
             if (this == null) {
               throw new TypeError('this is null or not defined');
             }
+
+            // 1. Let O be the result of calling ToObject passing the |this| 
+            //    value as the argument.
             var O = Object(this);
+
+            // 2. Let lenValue be the result of calling the Get internal 
+            //    method of O with the argument "length".
+            // 3. Let len be ToUint32(lenValue).
             var len = O.length >>> 0;
+
+            // 4. If IsCallable(callback) is false, throw a TypeError exception.
+            // See: http://es5.github.com/#x9.11
             if (typeof callback !== 'function') {
               throw new TypeError(callback + ' is not a function');
             }
+
+            // 5. If thisArg was supplied, let T be thisArg; else let T be undefined.
             if (arguments.length > 1) {
               T = arguments[1];
             }
+
+            // 6. Let A be a new array created as if by the expression new Array(len) 
+            //    where Array is the standard built-in constructor with that name and 
+            //    len is the value of len.
             A = new Array(len);
+
+            // 7. Let k be 0
             k = 0;
+
+            // 8. Repeat, while k < len
             while (k < len) {
+
               var kValue, mappedValue;
+
+              // a. Let Pk be ToString(k).
+              //   This is implicit for LHS operands of the in operator
+              // b. Let kPresent be the result of calling the HasProperty internal 
+              //    method of O with argument Pk.
+              //   This step can be combined with c
+              // c. If kPresent is true, then
               if (k in O) {
+
+                // i. Let kValue be the result of calling the Get internal 
+                //    method of O with argument Pk.
                 kValue = O[k];
+
+                // ii. Let mappedValue be the result of calling the Call internal 
+                //     method of callback with T as the this value and argument 
+                //     list containing kValue, k, and O.
                 mappedValue = callback.call(T, kValue, k, O);
+
+                // iii. Call the DefineOwnProperty internal method of A with arguments
+                // Pk, Property Descriptor
+                // { Value: mappedValue,
+                //   Writable: true,
+                //   Enumerable: true,
+                //   Configurable: true },
+                // and false.
+
+                // In browsers that support Object.defineProperty, use the following:
+                // Object.defineProperty(A, k, {
+                //   value: mappedValue,
+                //   writable: true,
+                //   enumerable: true,
+                //   configurable: true
+                // });
+
+                // For best browser support, use the following:
                 A[k] = mappedValue;
               }
+              // d. Increase k by 1.
               k++;
             }
+
+            // 9. return A
             return A;
           };
         }
       }
     }
     self = Composition
-    Composition.init()
+
+    // initilize with compatibility 
+    if (btnBox && word) {
+      Composition.init()
+    }
   })()
 } catch (e) {
   document.body.innerHTML = e.toString()
 }
+</script>
